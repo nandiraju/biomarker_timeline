@@ -19,6 +19,18 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTelemetryMaximized, setIsTelemetryMaximized] = useState(false);
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowHeight(window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const maximizedGaugeSize = Math.max(120, Math.min(220, Math.floor((windowHeight - 180) / 1.6)));
+  const currentGaugeSize = isTelemetryMaximized ? maximizedGaugeSize : 155;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -38,6 +50,56 @@ export default function App() {
       if (interval) clearInterval(interval);
     };
   }, [isPlaying]);
+
+  const [cardIds, setCardIds] = useState(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']);
+  const [draggedCardId, setDraggedCardId] = useState(null);
+  const [dragOverCardId, setDragOverCardId] = useState(null);
+
+  const handleDragStart = (e, id) => {
+    if (e.target.closest('.skeuo-inset-screen') || e.target.closest('.card-num-btn')) {
+      e.preventDefault();
+      return;
+    }
+    setDraggedCardId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDragEnter = (e, id) => {
+    e.preventDefault();
+    if (draggedCardId && draggedCardId !== id) {
+      setDragOverCardId(id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverCardId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedCardId(null);
+    setDragOverCardId(null);
+  };
+
+  const handleDrop = (e, targetId) => {
+    e.preventDefault();
+    setDragOverCardId(null);
+    if (!draggedCardId || draggedCardId === targetId) return;
+
+    const sourceIndex = cardIds.indexOf(draggedCardId);
+    const targetIndex = cardIds.indexOf(targetId);
+
+    const newCardIds = [...cardIds];
+    newCardIds.splice(sourceIndex, 1);
+    newCardIds.splice(targetIndex, 0, draggedCardId);
+
+    setCardIds(newCardIds);
+    setDraggedCardId(null);
+  };
 
   const formatDateTime = (date) => {
     const yyyy = date.getFullYear();
@@ -151,7 +213,7 @@ export default function App() {
           onClick={() => setIsTelemetryMaximized(false)} 
         />
       )}
-      <section className={`skeuo-panel telemetry-deck ${isTelemetryMaximized ? 'maximized' : ''}`} style={{ width: '100%', marginBottom: '1.5rem' }}>
+      <section className={`skeuo-panel telemetry-deck ${isTelemetryMaximized ? 'maximized' : ''}`} style={{ marginBottom: isTelemetryMaximized ? '0' : '1.5rem' }}>
         <div className="skeuo-screw screw-tl"></div>
         <div className="skeuo-screw screw-tr"></div>
         <div className="skeuo-screw screw-bl"></div>
@@ -197,7 +259,7 @@ export default function App() {
             color="blue"
             label={`${telemetry.labelSuffix} ctDNA`}
             unit="copies/mL"
-            size={isTelemetryMaximized ? 260 : 155}
+            size={currentGaugeSize}
             dangerZone={telemetry.ctDNAMax * 0.8}
           />
           <Gauge
@@ -207,7 +269,7 @@ export default function App() {
             color="green"
             label={`${telemetry.labelSuffix} CEA`}
             unit="ng/mL"
-            size={isTelemetryMaximized ? 260 : 155}
+            size={currentGaugeSize}
             dangerZone={5}
           />
           <Gauge
@@ -217,7 +279,7 @@ export default function App() {
             color="yellow"
             label={`${telemetry.labelSuffix} ${telemetry.markerName}`}
             unit="U/mL"
-            size={isTelemetryMaximized ? 260 : 155}
+            size={currentGaugeSize}
             dangerZone={37}
           />
           <Gauge
@@ -227,7 +289,7 @@ export default function App() {
             color="orange"
             label={`${telemetry.labelSuffix} Tumor Size`}
             unit="cm"
-            size={isTelemetryMaximized ? 260 : 155}
+            size={currentGaugeSize}
             dangerZone={5}
           />
           <Gauge
@@ -237,128 +299,161 @@ export default function App() {
             color="red"
             label={`${telemetry.labelSuffix} PD-L1`}
             unit="%"
-            size={isTelemetryMaximized ? 260 : 155}
+            size={currentGaugeSize}
             dangerZone={0}
           />
         </div>
       </section>
 
-      {/* 6-Panel Grid */}
+      {/* Draggable & Repositionable Grid of Cards */}
       <main className="dashboard-grid">
+        {(() => {
+          const cardsData = {
+            p1: {
+              title: isAll ? 'ctDNA Trend — All Patients' : 'Single Biomarker Trend',
+              icon: Activity,
+              iconColor: 'var(--glow-ctdna)',
+              desc: isAll
+                ? 'ctDNA levels overlaid across all three patients to compare treatment response trajectories.'
+                : 'ctDNA levels decrease after treatment and begin to rise slightly at the latest follow-up.',
+              className: '',
+              component: (
+                <SingleBiomarkerTrend
+                  patient={currentPatient}
+                  patients={activePatients}
+                  activeTimepoint={activeTimepoint}
+                  setActiveTimepoint={setActiveTimepoint}
+                />
+              )
+            },
+            p2: {
+              title: 'Multi-Biomarker Trend',
+              icon: BarChart2,
+              iconColor: 'var(--glow-cea)',
+              desc: 'Biomarkers show different response patterns over the course of treatment.',
+              className: '',
+              component: (
+                <MultiBiomarkerTrend
+                  patient={currentPatient}
+                  activeTimepoint={activeTimepoint}
+                  setActiveTimepoint={setActiveTimepoint}
+                />
+              )
+            },
+            p3: {
+              title: 'Treatment Timeline',
+              icon: Sparkles,
+              iconColor: 'var(--glow-tumor)',
+              desc: isAll
+                ? `Showing journey for ${currentPatient.name}. Select an individual patient for their timeline.`
+                : 'Clinical events aligned with longitudinal biomarker measurements across the care continuum.',
+              className: '',
+              component: (
+                <TreatmentTimeline
+                  patient={currentPatient}
+                  activeTimepoint={activeTimepoint}
+                  setActiveTimepoint={setActiveTimepoint}
+                />
+              )
+            },
+            p4: {
+              title: 'Biomarker Heatmap Table',
+              icon: Thermometer,
+              iconColor: 'var(--glow-mutation)',
+              desc: 'Heatmap table shows relative intensity of multiple biomarkers over time (row-wise).',
+              className: '',
+              component: (
+                <BiomarkerHeatmap
+                  patient={currentPatient}
+                  activeTimepoint={activeTimepoint}
+                  setActiveTimepoint={setActiveTimepoint}
+                />
+              )
+            },
+            p5: {
+              title: isAll ? 'Tumor Burden — All Patients' : 'Response / Spider Plot',
+              icon: TrendingDown,
+              iconColor: 'var(--glow-ctdna)',
+              desc: isAll
+                ? 'Comparative tumor burden change across all three patients against clinical response thresholds.'
+                : 'Percentage change in tumor burden shows deep response followed by early progression.',
+              className: '',
+              component: (
+                <ResponseSpiderPlot
+                  patient={currentPatient}
+                  patients={activePatients}
+                  activeTimepoint={activeTimepoint}
+                  setActiveTimepoint={setActiveTimepoint}
+                />
+              )
+            },
+            p6: {
+              title: 'Mutation Evolution Plot',
+              icon: ShieldAlert,
+              iconColor: 'var(--glow-mutation)',
+              desc: isAll
+                ? `Mutation clonal fractions for ${currentPatient.name}. Select an individual patient for theirs.`
+                : 'Clonal evolution of key mutations over time shows emergence and clearance of subclones.',
+              className: '',
+              component: (
+                <MutationEvolutionPlot
+                  patient={currentPatient}
+                  activeTimepoint={activeTimepoint}
+                  setActiveTimepoint={setActiveTimepoint}
+                />
+              )
+            },
+            p7: {
+              title: isAll ? 'Multi-Patient Biomarker Heatmap — Comparative View' : `Biomarker Intensity Heatmap — ${currentPatient.name}`,
+              icon: Grid3X3,
+              iconColor: '#a78bfa',
+              desc: isAll
+                ? 'Side-by-side biomarker intensity comparison across all three patients at each timepoint. Columns highlighted by the active timepoint scrubber.'
+                : 'Continuous color-scale heatmap showing relative biomarker intensities across all timepoints. Blue = cleared/low, red = high/active.',
+              className: 'heatmap-full',
+              component: (
+                <HeatmapChart
+                  patient={currentPatient}
+                  patients={activePatients}
+                  activeTimepoint={activeTimepoint}
+                  setActiveTimepoint={setActiveTimepoint}
+                />
+              )
+            }
+          };
 
-        {/* Panel 1: ctDNA Single Biomarker — supports multi-patient overlay */}
-        <SkeuoCard
-          title={isAll ? 'ctDNA Trend — All Patients' : 'Single Biomarker Trend'}
-          icon={Activity}
-          iconColor="var(--glow-ctdna)"
-          desc={isAll
-            ? 'ctDNA levels overlaid across all three patients to compare treatment response trajectories.'
-            : 'ctDNA levels decrease after treatment and begin to rise slightly at the latest follow-up.'}
-        >
-          <SingleBiomarkerTrend
-            patient={currentPatient}
-            patients={activePatients}
-            activeTimepoint={activeTimepoint}
-            setActiveTimepoint={setActiveTimepoint}
-          />
-        </SkeuoCard>
+          return cardIds.map((id) => {
+            const card = cardsData[id];
+            if (!card) return null;
+            const isDragging = draggedCardId === id;
+            const isDragOver = dragOverCardId === id;
 
-        {/* Panel 2: Multi-Biomarker Trend — single patient only */}
-        <SkeuoCard
-          title="Multi-Biomarker Trend"
-          icon={BarChart2}
-          iconColor="var(--glow-cea)"
-          desc="Biomarkers show different response patterns over the course of treatment."
-        >
-          <MultiBiomarkerTrend
-            patient={currentPatient}
-            activeTimepoint={activeTimepoint}
-            setActiveTimepoint={setActiveTimepoint}
-          />
-        </SkeuoCard>
-
-        {/* Panel 3: Treatment Timeline — single patient only */}
-        <SkeuoCard
-          title="Treatment Timeline"
-          icon={Sparkles}
-          iconColor="var(--glow-tumor)"
-          desc={isAll
-            ? `Showing journey for ${currentPatient.name}. Select an individual patient for their timeline.`
-            : 'Clinical events aligned with longitudinal biomarker measurements across the care continuum.'}
-        >
-          <TreatmentTimeline
-            patient={currentPatient}
-            activeTimepoint={activeTimepoint}
-            setActiveTimepoint={setActiveTimepoint}
-          />
-        </SkeuoCard>
-
-        {/* Panel 4: Biomarker Heatmap Table — single patient only */}
-        <SkeuoCard
-          title="Biomarker Heatmap Table"
-          icon={Thermometer}
-          iconColor="var(--glow-mutation)"
-          desc="Heatmap table shows relative intensity of multiple biomarkers over time (row-wise)."
-        >
-          <BiomarkerHeatmap
-            patient={currentPatient}
-            activeTimepoint={activeTimepoint}
-            setActiveTimepoint={setActiveTimepoint}
-          />
-        </SkeuoCard>
-
-        {/* Panel 5: Response Spider Plot — supports multi-patient overlay */}
-        <SkeuoCard
-          title={isAll ? 'Tumor Burden — All Patients' : 'Response / Spider Plot'}
-          icon={TrendingDown}
-          iconColor="var(--glow-ctdna)"
-          desc={isAll
-            ? 'Comparative tumor burden change across all three patients against clinical response thresholds.'
-            : 'Percentage change in tumor burden shows deep response followed by early progression.'}
-        >
-          <ResponseSpiderPlot
-            patient={currentPatient}
-            patients={activePatients}
-            activeTimepoint={activeTimepoint}
-            setActiveTimepoint={setActiveTimepoint}
-          />
-        </SkeuoCard>
-
-        {/* Panel 6: Mutation Evolution — single patient only */}
-        <SkeuoCard
-          title="Mutation Evolution Plot"
-          icon={ShieldAlert}
-          iconColor="var(--glow-mutation)"
-          desc={isAll
-            ? `Mutation clonal fractions for ${currentPatient.name}. Select an individual patient for theirs.`
-            : 'Clonal evolution of key mutations over time shows emergence and clearance of subclones.'}
-        >
-          <MutationEvolutionPlot
-            patient={currentPatient}
-            activeTimepoint={activeTimepoint}
-            setActiveTimepoint={setActiveTimepoint}
-          />
-        </SkeuoCard>
-
+            return (
+              <div
+                key={id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, id)}
+                onDragOver={(e) => handleDragOver(e)}
+                onDragEnter={(e) => handleDragEnter(e, id)}
+                onDragLeave={() => handleDragLeave()}
+                onDragEnd={() => handleDragEnd()}
+                onDrop={(e) => handleDrop(e, id)}
+                className={`card-drag-container ${card.className} ${isDragging ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''}`}
+              >
+                <SkeuoCard
+                  title={card.title}
+                  icon={card.icon}
+                  iconColor={card.iconColor}
+                  desc={card.desc}
+                  className={card.className}
+                >
+                  {card.component}
+                </SkeuoCard>
+              </div>
+            );
+          });
+        })()}
       </main>
-
-      {/* Panel 7: Scientific Heatmap — full width, supports multi-patient */}
-      <SkeuoCard
-        title={isAll ? 'Multi-Patient Biomarker Heatmap — Comparative View' : `Biomarker Intensity Heatmap — ${currentPatient.name}`}
-        icon={Grid3X3}
-        iconColor="#a78bfa"
-        desc={isAll
-          ? 'Side-by-side biomarker intensity comparison across all three patients at each timepoint. Columns highlighted by the active timepoint scrubber.'
-          : 'Continuous color-scale heatmap showing relative biomarker intensities across all timepoints. Blue = cleared/low, red = high/active.'}
-        className="heatmap-full"
-      >
-        <HeatmapChart
-          patient={currentPatient}
-          patients={activePatients}
-          activeTimepoint={activeTimepoint}
-          setActiveTimepoint={setActiveTimepoint}
-        />
-      </SkeuoCard>
 
       {/* Floating Timepoint Scrubber */}
       <div className="floating-scrubber skeuo-panel">
@@ -380,30 +475,9 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            {/* Play/Pause Button */}
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className={`skeuo-btn ${isPlaying ? 'active' : ''}`}
-              style={{ padding: '0.4rem', flexShrink: 0, width: '32px', height: '32px', justifyContent: 'center' }}
-              title={isPlaying ? 'Pause Auto-Play' : 'Start Auto-Play'}
-            >
-              {isPlaying ? <Pause size={14} style={{ color: '#ef4444' }} /> : <Play size={14} style={{ color: '#10b981' }} />}
-            </button>
-
-            {/* Previous Button */}
-            <button
-              onClick={() => setActiveTimepoint((prev) => Math.max(0, prev - 1))}
-              className="skeuo-btn"
-              disabled={activeTimepoint === 0}
-              style={{ padding: '0.4rem', flexShrink: 0, width: '32px', height: '32px', justifyContent: 'center', opacity: activeTimepoint === 0 ? 0.5 : 1 }}
-              title="Previous Timepoint"
-            >
-              <ChevronLeft size={14} />
-            </button>
-
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             {/* Track and Slider Input */}
-            <div className="skeuo-slider-container" style={{ flexGrow: 1 }}>
+            <div className="skeuo-slider-container">
               <div className="skeuo-slider-track">
                 <input
                   type="range"
@@ -415,21 +489,10 @@ export default function App() {
                 />
               </div>
             </div>
-
-            {/* Next Button */}
-            <button
-              onClick={() => setActiveTimepoint((prev) => Math.min(5, prev + 1))}
-              className="skeuo-btn"
-              disabled={activeTimepoint === 5}
-              style={{ padding: '0.4rem', flexShrink: 0, width: '32px', height: '32px', justifyContent: 'center', opacity: activeTimepoint === 5 ? 0.5 : 1 }}
-              title="Next Timepoint"
-            >
-              <ChevronRight size={14} />
-            </button>
           </div>
 
           {/* Quick selectors or indicators */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 0.1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 14px' }}>
             {['T0', 'T1', 'T2', 'T3', 'T4', 'T5'].map((tp, idx) => (
               <button
                 key={idx}
