@@ -11,7 +11,6 @@ export default function ControlCenter({
   patients,
   activePatientId,
   setActivePatientId,
-  activeTimepoint,
   setActiveTimepoint
 }) {
   const isAll = activePatientId === 'all';
@@ -154,55 +153,6 @@ export default function ControlCenter({
                 </div>
               </>
             )}
-          </div>
-        </div>
-
-        {/* Interactive Playback Timeline Slider */}
-        <div style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="skeuo-inset" style={{ padding: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'space-between', height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                Timepoint Scrubber
-              </div>
-              <div className="digital-readout" style={{ fontSize: '0.85rem', color: '#10b981', textShadow: '0 0 4px rgba(16, 185, 129, 0.6)' }}>
-                T{activeTimepoint} / T5
-              </div>
-            </div>
-
-            <div className="skeuo-slider-container">
-              <div className="skeuo-slider-track">
-                <input
-                  type="range"
-                  min="0"
-                  max="5"
-                  value={activeTimepoint}
-                  onChange={(e) => setActiveTimepoint(parseInt(e.target.value))}
-                  className="skeuo-slider-input"
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 0.25rem' }}>
-                {timepointKeys.map((tp, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveTimepoint(idx)}
-                    style={{
-                      border: 'none',
-                      background: 'none',
-                      color: activeTimepoint === idx ? '#38bdf8' : 'var(--text-muted)',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '0.75rem',
-                      fontWeight: activeTimepoint === idx ? 'bold' : 'normal',
-                      cursor: 'pointer',
-                      textShadow: activeTimepoint === idx ? '0 0 5px rgba(56, 189, 248, 0.8)' : 'none',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {tp}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 

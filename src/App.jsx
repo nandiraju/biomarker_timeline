@@ -11,12 +11,14 @@ import MutationEvolutionPlot from './components/MutationEvolutionPlot';
 import HeatmapChart from './components/HeatmapChart';
 import Gauge from './components/Gauge';
 import brandLogo from './assets/brand_logo.png';
-import { Activity, ShieldAlert, TrendingDown, Thermometer, Sparkles, BarChart2, Grid3X3 } from 'lucide-react';
+import { Activity, ShieldAlert, TrendingDown, Thermometer, Sparkles, BarChart2, Grid3X3, Play, Pause, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 
 export default function App() {
   const [activePatientId, setActivePatientId] = useState('pat-001');
   const [activeTimepoint, setActiveTimepoint] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isTelemetryMaximized, setIsTelemetryMaximized] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -24,6 +26,18 @@ export default function App() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    let interval = null;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setActiveTimepoint((prev) => (prev + 1) % 6);
+      }, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isPlaying]);
 
   const formatDateTime = (date) => {
     const yyyy = date.getFullYear();
@@ -127,12 +141,17 @@ export default function App() {
         patients={patients}
         activePatientId={activePatientId}
         setActivePatientId={setActivePatientId}
-        activeTimepoint={activeTimepoint}
         setActiveTimepoint={setActiveTimepoint}
       />
 
       {/* Real-Time Telemetry Deck */}
-      <section className="skeuo-panel telemetry-deck" style={{ width: '100%', marginBottom: '1.5rem' }}>
+      {isTelemetryMaximized && (
+        <div 
+          className="maximized-backdrop" 
+          onClick={() => setIsTelemetryMaximized(false)} 
+        />
+      )}
+      <section className={`skeuo-panel telemetry-deck ${isTelemetryMaximized ? 'maximized' : ''}`} style={{ width: '100%', marginBottom: '1.5rem' }}>
         <div className="skeuo-screw screw-tl"></div>
         <div className="skeuo-screw screw-tr"></div>
         <div className="skeuo-screw screw-bl"></div>
@@ -140,7 +159,29 @@ export default function App() {
         
         <div className="card-header-container" style={{ marginBottom: '1.25rem' }}>
           <div className="card-title-group">
-            <span className="card-num">T</span>
+            <button 
+              type="button"
+              className="card-num-btn"
+              onClick={() => setIsTelemetryMaximized(!isTelemetryMaximized)}
+              title={isTelemetryMaximized ? "Exit Fullscreen" : "Maximize to Fullscreen"}
+              style={{
+                background: '#10151c',
+                color: isTelemetryMaximized ? '#ef4444' : '#38bdf8',
+                border: '1px solid #1a222d',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.05)',
+                transition: 'all 0.15s ease',
+                padding: 0
+              }}
+            >
+              {isTelemetryMaximized ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+            </button>
             <h2 className="card-title" style={{ fontSize: '1.1rem', letterSpacing: '0.05em' }}>REAL-TIME MOLECULAR TELEMETRY DECK</h2>
           </div>
           <div className="digital-readout" style={{ fontSize: '0.85rem', color: '#38bdf8' }}>
@@ -156,7 +197,7 @@ export default function App() {
             color="blue"
             label={`${telemetry.labelSuffix} ctDNA`}
             unit="copies/mL"
-            size={155}
+            size={isTelemetryMaximized ? 260 : 155}
             dangerZone={telemetry.ctDNAMax * 0.8}
           />
           <Gauge
@@ -166,7 +207,7 @@ export default function App() {
             color="green"
             label={`${telemetry.labelSuffix} CEA`}
             unit="ng/mL"
-            size={155}
+            size={isTelemetryMaximized ? 260 : 155}
             dangerZone={5}
           />
           <Gauge
@@ -176,7 +217,7 @@ export default function App() {
             color="yellow"
             label={`${telemetry.labelSuffix} ${telemetry.markerName}`}
             unit="U/mL"
-            size={155}
+            size={isTelemetryMaximized ? 260 : 155}
             dangerZone={37}
           />
           <Gauge
@@ -186,7 +227,7 @@ export default function App() {
             color="orange"
             label={`${telemetry.labelSuffix} Tumor Size`}
             unit="cm"
-            size={155}
+            size={isTelemetryMaximized ? 260 : 155}
             dangerZone={5}
           />
           <Gauge
@@ -196,7 +237,7 @@ export default function App() {
             color="red"
             label={`${telemetry.labelSuffix} PD-L1`}
             unit="%"
-            size={155}
+            size={isTelemetryMaximized ? 260 : 155}
             dangerZone={0}
           />
         </div>
@@ -207,7 +248,6 @@ export default function App() {
 
         {/* Panel 1: ctDNA Single Biomarker — supports multi-patient overlay */}
         <SkeuoCard
-          number="1"
           title={isAll ? 'ctDNA Trend — All Patients' : 'Single Biomarker Trend'}
           icon={Activity}
           iconColor="var(--glow-ctdna)"
@@ -225,7 +265,6 @@ export default function App() {
 
         {/* Panel 2: Multi-Biomarker Trend — single patient only */}
         <SkeuoCard
-          number="2"
           title="Multi-Biomarker Trend"
           icon={BarChart2}
           iconColor="var(--glow-cea)"
@@ -240,7 +279,6 @@ export default function App() {
 
         {/* Panel 3: Treatment Timeline — single patient only */}
         <SkeuoCard
-          number="3"
           title="Treatment Timeline"
           icon={Sparkles}
           iconColor="var(--glow-tumor)"
@@ -257,7 +295,6 @@ export default function App() {
 
         {/* Panel 4: Biomarker Heatmap Table — single patient only */}
         <SkeuoCard
-          number="4"
           title="Biomarker Heatmap Table"
           icon={Thermometer}
           iconColor="var(--glow-mutation)"
@@ -272,7 +309,6 @@ export default function App() {
 
         {/* Panel 5: Response Spider Plot — supports multi-patient overlay */}
         <SkeuoCard
-          number="5"
           title={isAll ? 'Tumor Burden — All Patients' : 'Response / Spider Plot'}
           icon={TrendingDown}
           iconColor="var(--glow-ctdna)"
@@ -290,7 +326,6 @@ export default function App() {
 
         {/* Panel 6: Mutation Evolution — single patient only */}
         <SkeuoCard
-          number="6"
           title="Mutation Evolution Plot"
           icon={ShieldAlert}
           iconColor="var(--glow-mutation)"
@@ -309,7 +344,6 @@ export default function App() {
 
       {/* Panel 7: Scientific Heatmap — full width, supports multi-patient */}
       <SkeuoCard
-        number="7"
         title={isAll ? 'Multi-Patient Biomarker Heatmap — Comparative View' : `Biomarker Intensity Heatmap — ${currentPatient.name}`}
         icon={Grid3X3}
         iconColor="#a78bfa"
@@ -325,6 +359,99 @@ export default function App() {
           setActiveTimepoint={setActiveTimepoint}
         />
       </SkeuoCard>
+
+      {/* Floating Timepoint Scrubber */}
+      <div className="floating-scrubber skeuo-panel">
+        <div className="skeuo-screw screw-tl"></div>
+        <div className="skeuo-screw screw-tr"></div>
+        <div className="skeuo-screw screw-bl"></div>
+        <div className="skeuo-screw screw-br"></div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span className="card-num" style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}>P</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                Timeline Scrubber
+              </span>
+            </div>
+            <div className="digital-readout" style={{ fontSize: '0.8rem', color: '#10b981', textShadow: '0 0 4px rgba(16, 185, 129, 0.6)' }}>
+              T{activeTimepoint} / T5
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            {/* Play/Pause Button */}
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              className={`skeuo-btn ${isPlaying ? 'active' : ''}`}
+              style={{ padding: '0.4rem', flexShrink: 0, width: '32px', height: '32px', justifyContent: 'center' }}
+              title={isPlaying ? 'Pause Auto-Play' : 'Start Auto-Play'}
+            >
+              {isPlaying ? <Pause size={14} style={{ color: '#ef4444' }} /> : <Play size={14} style={{ color: '#10b981' }} />}
+            </button>
+
+            {/* Previous Button */}
+            <button
+              onClick={() => setActiveTimepoint((prev) => Math.max(0, prev - 1))}
+              className="skeuo-btn"
+              disabled={activeTimepoint === 0}
+              style={{ padding: '0.4rem', flexShrink: 0, width: '32px', height: '32px', justifyContent: 'center', opacity: activeTimepoint === 0 ? 0.5 : 1 }}
+              title="Previous Timepoint"
+            >
+              <ChevronLeft size={14} />
+            </button>
+
+            {/* Track and Slider Input */}
+            <div className="skeuo-slider-container" style={{ flexGrow: 1 }}>
+              <div className="skeuo-slider-track">
+                <input
+                  type="range"
+                  min="0"
+                  max="5"
+                  value={activeTimepoint}
+                  onChange={(e) => setActiveTimepoint(parseInt(e.target.value))}
+                  className="skeuo-slider-input"
+                />
+              </div>
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => setActiveTimepoint((prev) => Math.min(5, prev + 1))}
+              className="skeuo-btn"
+              disabled={activeTimepoint === 5}
+              style={{ padding: '0.4rem', flexShrink: 0, width: '32px', height: '32px', justifyContent: 'center', opacity: activeTimepoint === 5 ? 0.5 : 1 }}
+              title="Next Timepoint"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Quick selectors or indicators */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 0.1rem' }}>
+            {['T0', 'T1', 'T2', 'T3', 'T4', 'T5'].map((tp, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveTimepoint(idx)}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  color: activeTimepoint === idx ? '#38bdf8' : 'var(--text-muted)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.7rem',
+                  fontWeight: activeTimepoint === idx ? 'bold' : 'normal',
+                  cursor: 'pointer',
+                  textShadow: activeTimepoint === idx ? '0 0 5px rgba(56, 189, 248, 0.8)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {tp}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
     </div>
   );

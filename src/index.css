@@ -598,3 +598,164 @@ body {
   border-top: 1px solid #1c222c;
   padding-top: 0.5rem;
 }
+
+/* Floating Scrubber Panel */
+.floating-scrubber {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 335px;
+  z-index: 1000;
+  background: linear-gradient(135deg, rgba(32, 39, 48, 0.95) 0%, rgba(23, 29, 36, 0.95) 100%);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(46, 56, 70, 0.9);
+  box-shadow: 
+    0 10px 30px -5px rgba(0, 0, 0, 0.7),
+    0 5px 15px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.floating-scrubber:hover {
+  box-shadow: 
+    0 15px 35px -5px rgba(0, 0, 0, 0.8), 
+    0 10px 20px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 15px rgba(56, 189, 248, 0.25);
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* Ensure controls stack nicely on mobile screens */
+@media (max-width: 480px) {
+  .floating-scrubber {
+    width: calc(100% - 2rem);
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+  }
+}
+
+/* Maximized Card & Fullscreen Backdrop */
+.maximized-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(6, 9, 13, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.skeuo-panel.maximized {
+  position: fixed;
+  top: 2rem;
+  left: 2rem;
+  right: 2rem;
+  bottom: 2rem;
+  width: calc(100vw - 4rem);
+  height: calc(100vh - 4rem);
+  z-index: 2000;
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.95),
+    0 0 45px rgba(56, 189, 248, 0.25);
+  border-radius: 16px;
+  animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+.skeuo-panel.maximized .skeuo-inset-screen {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  height: calc(100% - 90px);
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.skeuo-panel.maximized .skeuo-inset-screen > div {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.skeuo-panel.maximized svg {
+  max-height: 60vh !important;
+  width: auto !important;
+  margin: 0 auto;
+}
+
+.card-num-btn:hover {
+  background: #1c2430 !important;
+  color: #38bdf8 !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5) !important;
+  transform: scale(1.1);
+}
+
+/* Maximized Telemetry Deck layout */
+.telemetry-deck.maximized {
+  position: fixed;
+  top: 2rem;
+  left: 2rem;
+  right: 2rem;
+  bottom: 2rem;
+  width: calc(100vw - 4rem);
+  height: calc(100vh - 4rem);
+  z-index: 2000;
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.95),
+    0 0 45px rgba(56, 189, 248, 0.25);
+  border-radius: 16px;
+  animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+.telemetry-deck.maximized .telemetry-gauges-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+  height: calc(100% - 90px);
+  padding: 2rem;
+  align-content: center;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
