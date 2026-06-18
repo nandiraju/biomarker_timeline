@@ -33,7 +33,7 @@ export default function ResponseSpiderPlot({ patient, patients, activeTimepoint,
   };
 
   const handleMouseMove = (e, idx) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = e.currentTarget.closest('svg').getBoundingClientRect();
     setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top - 55 });
     setHoverIdx(idx);
   };
@@ -157,8 +157,8 @@ export default function ResponseSpiderPlot({ patient, patients, activeTimepoint,
       {/* Tooltip */}
       {hoverIdx !== null && (
         <div className="chart-tooltip" style={{
-          left: `${(tooltipPos.x / width) * 100}%`,
-          top: `${(tooltipPos.y / height) * 100}%`,
+          left: `${tooltipPos.x}px`,
+          top: `${tooltipPos.y}px`,
           transform: 'translateX(-50%)',
           pointerEvents: 'none',
           whiteSpace: 'nowrap'

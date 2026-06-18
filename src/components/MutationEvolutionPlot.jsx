@@ -35,12 +35,12 @@ export default function MutationEvolutionPlot({ patient, activeTimepoint, setAct
   ];
 
   const handleMouseMove = (e, rowIdx, colIdx, val, name, status) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = e.currentTarget.closest('svg').getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     setTooltipPos({
       x,
-      y: getRowY(rowIdx) - 35,
+      y: y - 55,
       val: status === "ND" ? "Not Detected (ND)" : `Detected (${val}% Clonal Fraction)`,
       name
     });
@@ -231,8 +231,8 @@ export default function MutationEvolutionPlot({ patient, activeTimepoint, setAct
         <div 
           className="chart-tooltip"
           style={{
-            left: `${(tooltipPos.x / width) * 100}%`,
-            top: `${(tooltipPos.y / height) * 100}%`,
+            left: `${tooltipPos.x}px`,
+            top: `${tooltipPos.y}px`,
             transform: 'translateX(-50%)',
             pointerEvents: 'none',
             whiteSpace: 'nowrap'

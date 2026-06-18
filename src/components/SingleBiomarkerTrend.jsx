@@ -42,7 +42,7 @@ export default function SingleBiomarkerTrend({ patient, patients, activeTimepoin
   };
 
   const handleMouseMove = (e, idx) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = e.currentTarget.closest('svg').getBoundingClientRect();
     setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top - 45 });
     setHoverIdx(idx);
   };
@@ -165,8 +165,8 @@ export default function SingleBiomarkerTrend({ patient, patients, activeTimepoin
       {/* Tooltip */}
       {hoverIdx !== null && (
         <div className="chart-tooltip" style={{
-          left: `${(tooltipPos.x / width) * 100}%`,
-          top: `${(tooltipPos.y / height) * 100}%`,
+          left: `${tooltipPos.x}px`,
+          top: `${tooltipPos.y}px`,
           transform: 'translateX(-50%)',
           pointerEvents: 'none',
           whiteSpace: 'nowrap'

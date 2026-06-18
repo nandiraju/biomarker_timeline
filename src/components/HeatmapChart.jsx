@@ -265,13 +265,11 @@ export default function HeatmapChart({ patient, patients, activeTimepoint, setAc
       {/* Tooltip */}
       {hoverCell !== null && (
         <div className="chart-tooltip" style={{
-          left: `${(tooltipPos.x / (typeof window !== 'undefined' ? window.innerWidth : 600)) * 100}%`,
+          left: `${tooltipPos.x}px`,
           top: `${tooltipPos.y}px`,
           transform: 'translateX(-50%)',
           pointerEvents: 'none',
           whiteSpace: 'nowrap',
-          position: 'fixed',
-          zIndex: 200,
         }}>
           <div className="chart-tooltip-title">T{hoverCell.tIdx} · {BIOMARKER_LABELS[hoverCell.bIdx]}</div>
           {tooltipPos.lines.map((l, i) => (

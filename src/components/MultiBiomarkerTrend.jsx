@@ -45,7 +45,7 @@ export default function MultiBiomarkerTrend({ patient, activeTimepoint, setActiv
   const tumorPath = tumorPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
   const handleMouseMove = (e, index) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = e.currentTarget.closest('svg').getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     setTooltipPos({
@@ -288,8 +288,8 @@ export default function MultiBiomarkerTrend({ patient, activeTimepoint, setActiv
         <div 
           className="chart-tooltip"
           style={{
-            left: `${(tooltipPos.x / width) * 100}%`,
-            top: `${(tooltipPos.y / height) * 100}%`,
+            left: `${tooltipPos.x}px`,
+            top: `${tooltipPos.y}px`,
             transform: 'translateX(-50%)',
             pointerEvents: 'none',
             whiteSpace: 'nowrap'
